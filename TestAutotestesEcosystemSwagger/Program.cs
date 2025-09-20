@@ -1,5 +1,6 @@
 using Microsoft.OpenApi.Models;
 using System.Reflection;
+using TestAutotestesEcosystemSwagger.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,8 +14,8 @@ builder.Services.AddSwaggerGen(options =>
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Version = "v1",
-        Title = "User Management API",
-        Description = "ASP.NET Core Web API для управления пользователями",
+        Title = "AI Ecosystem Autotests API",
+        Description = "ASP.NET Core Web API для управления тестами авторизации AI Ecosystem",
         TermsOfService = new Uri("https://example.com/terms"),
         Contact = new OpenApiContact
         {
@@ -37,6 +38,28 @@ builder.Services.AddSwaggerGen(options =>
     {
         options.IncludeXmlComments(xmlPath);
     }
+
+    // Сортируем эндпоинты: сначала системные, потом контроллеры
+    options.OrderActionsBy(apiDesc =>
+    {
+        var path = apiDesc.RelativePath?.ToLower() ?? "";
+        
+        // Приоритет 1: Системные эндпоинты
+        if (path == "health" || path == "") return "01";
+        
+        // Приоритет 2: Эндпоинты Auth
+        if (path.StartsWith("api/auth")) return "02";
+        
+        // Остальные эндпоинты
+        return "99";
+    });
+
+    // Группируем по контроллерам
+    options.TagActionsBy(api =>
+    {
+        var controllerName = api.ActionDescriptor.RouteValues["controller"];
+        return new[] { controllerName };
+    });
 
     // Добавляем поддержку JWT Bearer
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -87,10 +110,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "User API v1");
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "AI Ecosystem Autotests API v1");
         options.RoutePrefix = "swagger";
-        options.DocumentTitle = "User Management API Documentation";
+        options.DocumentTitle = "AI Ecosystem Autotests API Documentation";
         options.DefaultModelsExpandDepth(-1);
+        
+        // Добавляем кастомные CSS для улучшения внешнего вида
+        options.InjectStylesheet("/swagger-custom.css");
     });
 }
 else
@@ -98,7 +124,7 @@ else
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "User API v1");
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "AI Ecosystem Autotests API v1");
         options.RoutePrefix = "api-docs";
     });
 }
@@ -120,11 +146,19 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Добавляем health check endpoint
-app.MapGet("/health", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }));
+// Добавляем health check endpoint (будет первым!)
+app.MapGet("/health", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }))
+   .WithTags("System")
+   .WithName("HealthCheck")
+   .WithDisplayName("01 - Health Check")
+   .WithDescription("Проверка работоспособности приложения");
 
-// Добавляем корневой endpoint с информацией об API
-app.MapGet("/", () => Results.Redirect("/swagger"));
+// Добавляем корневой endpoint с информацией об API (будет вторым!)
+app.MapGet("/", () => Results.Redirect("/swagger"))
+   .WithTags("System")
+   .WithName("Root")
+   .WithDisplayName("02 - Root Redirect")
+   .WithDescription("Перенаправление на Swagger UI");
 
 // Глобальная обработка исключений
 app.UseExceptionHandler(exceptionHandlerApp =>
@@ -137,7 +171,8 @@ app.UseExceptionHandler(exceptionHandlerApp =>
         await context.Response.WriteAsJsonAsync(new
         {
             error = "An unexpected error occurred. Please try again later.",
-            requestId = context.TraceIdentifier
+            requestId = context.TraceIdentifier,
+            timestamp = DateTime.UtcNow
         });
     });
 });
@@ -147,10 +182,11 @@ var apiSettings = app.Services.GetRequiredService<IConfiguration>().GetSection("
 
 Console.WriteLine("Application starting...");
 Console.WriteLine($"Environment: {app.Environment.EnvironmentName}");
-Console.WriteLine($"Base URL: {apiSettings?.BaseUrl}");
-Console.WriteLine($"Timeout: {apiSettings?.Timeout} seconds");
+Console.WriteLine($"Base URL: {apiSettings?.BaseUrl ?? "Not configured"}");
+Console.WriteLine($"Timeout: {apiSettings?.Timeout ?? 30} seconds");
 Console.WriteLine("Swagger UI available at: /swagger");
 Console.WriteLine("Health check available at: /health");
+Console.WriteLine("Auth API available at: /api/auth");
 
 app.Run();
 

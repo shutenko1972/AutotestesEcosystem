@@ -1,6 +1,6 @@
 ﻿<!-- Начало
 
-# AutotestesEcosystem.
+# AutotestesEcosystem
 
 Узнать структуру приложения в корне проекта:
 tree /F

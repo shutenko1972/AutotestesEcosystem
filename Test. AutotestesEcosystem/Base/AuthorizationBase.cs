@@ -4,9 +4,8 @@ using OpenQA.Selenium.Support.UI;
 using System;
 using System.Linq;
 using System.Threading;
-using Autotests_ai_ecosystem;
 
-namespace Autotests_ai_ecosystem.Base
+namespace Autotests.Base
 {
     public abstract class AuthorizationBase : BaseTest
     {

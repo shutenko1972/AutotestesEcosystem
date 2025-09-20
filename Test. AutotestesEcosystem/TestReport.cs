@@ -1,10 +1,10 @@
-﻿using System;
+﻿﻿using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Autotests_ai_ecosystem
+namespace Autotests
 {
     public class TestReport
     {
@@ -129,6 +129,11 @@ namespace Autotests_ai_ecosystem
             AddStep($"Данные теста: {key} = {value}", "ДАННЫЕ");
         }
 
+        public void FinalizeReport()
+        {
+            SaveReport();
+        }
+
         public void SaveReport()
         {
             try
@@ -187,6 +192,24 @@ namespace Autotests_ai_ecosystem
                 Console.WriteLine($"Не удалось сохранить отчет: {ex.Message}");
                 // Пытаемся сохранить хотя бы в временную директорию
                 TrySaveToTempDirectory();
+            }
+        }
+
+        private void TrySaveToTempDirectory()
+        {
+            try
+            {
+                var tempDirectory = Path.Combine(Path.GetTempPath(), "TestReports");
+                Directory.CreateDirectory(tempDirectory);
+                
+                var tempFilePath = Path.Combine(tempDirectory, $"{_testName}_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+                File.WriteAllText(tempFilePath, _reportContent.ToString(), Encoding.UTF8);
+                
+                Console.WriteLine($"✓ Отчет сохранен во временную директорию: {tempFilePath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Не удалось сохранить отчет даже во временную директорию: {ex.Message}");
             }
         }
 
@@ -267,46 +290,33 @@ namespace Autotests_ai_ecosystem
 
                 htmlSteps.AppendLine($"<span class='timestamp'>[{timestamp}]</span> ");
 
-                // Извлекаем оставшееся содержимое
-                var contentStart = step.IndexOf(']', timestampEnd + 1) + 2;
-                var content = step[contentStart..];
+                // Извлекаем оставшуюся часть сообщения (после второго закрывающей скобки)
+                var messageStart = step.IndexOf(']', timestampEnd + 1) + 2;
+                var message = step[messageStart..];
 
-                htmlSteps.AppendLine(content.Replace("\n", "<br>"));
+                // Заменяем переносы строк на HTML теги
+                message = message.Replace("\n", "<br/>");
+                
+                htmlSteps.AppendLine(message);
                 htmlSteps.AppendLine("</div>");
             }
 
             return htmlSteps.ToString();
         }
 
-        private void TrySaveToTempDirectory()
+        public bool IsTestPassed()
         {
-            try
-            {
-                var tempDir = Path.Combine(Path.GetTempPath(), "TestReports");
-                Directory.CreateDirectory(tempDir);
-
-                var fileName = $"{_testName}_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
-                var filePath = Path.Combine(tempDir, fileName);
-
-                File.WriteAllText(filePath, _reportContent.ToString(), Encoding.UTF8);
-                Console.WriteLine($"Отчет сохранен во временную директорию: {filePath}");
-            }
-            catch
-            {
-                Console.WriteLine("Не удалось сохранить отчет даже во временную директорию");
-            }
+            return _testPassed;
         }
 
-        public void FinalizeReport()
+        public string GetTestName()
         {
-            _endTime = DateTime.Now;
-            AddStep($"Тест завершен в {_endTime:yyyy-MM-dd HH:mm:ss.fff}", "ИНФО");
-            SaveReport();
+            return _testName;
         }
 
-        public bool TestPassed => _testPassed;
-        public string ReportDirectory => _reportDirectory;
-        public int StepsCount => _steps.Count;
-        public TimeSpan Duration => _endTime - _startTime;
+        public int GetStepCount()
+        {
+            return _steps.Count;
+        }
     }
 }

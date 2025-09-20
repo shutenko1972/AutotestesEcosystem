@@ -2,8 +2,7 @@
 
 # AutotestesEcosystem.
 
-Узнать структуру приложения:
-cd C:\Users\shute\source\AutoEco\Test. AutoЕco
+Узнать структуру приложения в корне проекта:
 tree /F
 
 Конец -->

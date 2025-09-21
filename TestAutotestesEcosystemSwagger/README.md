@@ -1,15 +1,21 @@
-<!-- Начало
+п»ї<!-- РќР°С‡Р°Р»Рѕ
 
-20.09.2025
-Swagger
-TestAutotestesEcosystemSwagger
+РРЅСЃС‚СЂСѓРєС†РёСЏ:
 
-Эндпоинты в Swagger соответствуют автотесту "BaseAuthenticationFlowSessionValidation.cs
-GET /api/auth/credentials - текущие данные в памяти
-GET /api/auth/credentials/config - данные из конфигурации
-POST /api/auth/credentials - обновить данные в памяти
-POST /api/auth/credentials/reset - сбросить к конфигурации
-POST /api/auth/validate - валидация любых данных
-GET /api/auth/validate/current - валидация текущих данных
+1. Р—Р°РїСѓСЃРє РїСЂРёР»РѕР¶РµРЅРёСЏ
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
-Конец -->
+2. Р”РѕСЃС‚СѓРї Рє Swagger UI
+Swagger UI: http://localhost:8000/docs
+Alternative UI (ReDoc): http://localhost:8000/redoc
+OpenAPI JSON: http://localhost:8000/openapi.json
+
+Р›РёС‡РЅС‹Р№ РєР°Р±РёРЅРµС‚
+https://ai-ecosystem-test.janusww.com:9999/auth/login.html
+v_shutenko 
+8nEThznM
+
+РЈР·РЅР°С‚СЊ СЃС‚СЂСѓРєС‚СѓСЂСѓ РїСЂРёР»РѕР¶РµРЅРёСЏ РІ РєРѕСЂРЅРµ РїСЂРѕРµРєС‚Р°:
+tree /F
+
+РљРѕРЅРµС† -->

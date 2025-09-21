@@ -29,7 +29,7 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 
-    // явно указываем серверы дл€ Swagger на правильном порту
+    // явно указываем серверы дл€ Swagger
     options.AddServer(new OpenApiServer { Url = "https://localhost:60363" });
     options.AddServer(new OpenApiServer { Url = "http://localhost:5214" });
 
@@ -43,7 +43,7 @@ builder.Services.AddSwaggerGen(options =>
     }
 });
 
-// ѕравильна€ настройка CORS
+// ѕ–ј¬»Ћ№Ќјя настройка CORS (без AllowCredentials)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -51,30 +51,24 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader();
+        // ”Ѕ–јЌќ: .AllowCredentials();
     });
 });
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "AI Ecosystem Autotests API v1");
-        options.RoutePrefix = "swagger";
-        options.DocumentTitle = "AI Ecosystem Autotests API Documentation";
-    });
-}
-
-app.UseHttpsRedirection();
-
-// ¬ключаем CORS ƒќ UseAuthorization и MapControllers
 app.UseCors("AllowAll");
 
-app.UseAuthorization();
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "AI Ecosystem Autotests API v1");
+    options.RoutePrefix = "swagger";
+    options.DocumentTitle = "AI Ecosystem Autotests API Documentation";
+});
 
+app.UseAuthorization();
 app.MapControllers();
 
 app.Run();

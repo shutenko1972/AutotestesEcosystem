@@ -3,6 +3,8 @@ using NUnit.Framework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using System;
+using System.Linq;
+using System.Threading;
 
 namespace Autotests.Tests
 {
@@ -14,7 +16,8 @@ namespace Autotests.Tests
     {
         [Test]
         [Order(1)]
-        public void SuccessfulUserAuthentication_WithValidCredentials_FromBaseConfiguration()
+        [Description("Verify successful user authentication using valid credentials from base configuration")]
+        public void VerifySuccessfulAuthenticationWithValidCredentials()
         {
             HandleCommonExceptions(() =>
             {
@@ -52,7 +55,8 @@ namespace Autotests.Tests
 
         [Test]
         [Order(2)]
-        public void BaseAuthMethod_ValidatesLoginSuccess()
+        [Description("Validate base authentication method successfully processes valid login credentials")]
+        public void ValidateBaseAuthenticationMethodSuccess()
         {
             HandleCommonExceptions(() =>
             {
@@ -71,7 +75,8 @@ namespace Autotests.Tests
 
         [Test]
         [Order(3)]
-        public void Test222_LogoutSequence_FromSeleniumIDE()
+        [Description("Verify complete user logout sequence redirects to authentication page")]
+        public void VerifyUserLogoutSequenceCompletesSuccessfully()
         {
             HandleCommonExceptions(() =>
             {
@@ -139,7 +144,8 @@ namespace Autotests.Tests
 
         [Test]
         [Order(4)]
-        public void Test222_FullLogoutAndLoginSequence_FromSeleniumIDE()
+        [Description("Verify complete logout and subsequent re-authentication sequence maintains session integrity")]
+        public void VerifyCompleteLogoutAndReauthenticationSequence()
         {
             HandleCommonExceptions(() =>
             {

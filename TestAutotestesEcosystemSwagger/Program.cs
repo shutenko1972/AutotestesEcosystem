@@ -7,6 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
+// Добавляем HttpClient для новых эндпоинтов аутентификации
+builder.Services.AddHttpClient();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -43,13 +46,13 @@ builder.Services.AddSwaggerGen(options =>
     options.OrderActionsBy(apiDesc =>
     {
         var path = apiDesc.RelativePath?.ToLower() ?? "";
-        
+
         // Приоритет 1: Системные эндпоинты
         if (path == "health" || path == "") return "01";
-        
+
         // Приоритет 2: Эндпоинты Auth
         if (path.StartsWith("api/auth")) return "02";
-        
+
         // Остальные эндпоинты
         return "99";
     });
@@ -114,7 +117,7 @@ if (app.Environment.IsDevelopment())
         options.RoutePrefix = "swagger";
         options.DocumentTitle = "AI Ecosystem Autotests API Documentation";
         options.DefaultModelsExpandDepth(-1);
-        
+
         // Добавляем кастомные CSS для улучшения внешнего вида
         options.InjectStylesheet("/swagger-custom.css");
     });

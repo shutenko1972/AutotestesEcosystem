@@ -1,100 +1,80 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Routing.Constraints;
 using Microsoft.OpenApi.Models;
-using System.Text.Json.Serialization;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Добавляем контроллеры (если нужно)
+// Add services to the container.
 builder.Services.AddControllers();
 
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-    options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
-});
-
-// Регистрируем политику маршрутизации для regex constraints
-builder.Services.Configure<RouteOptions>(options =>
-    options.SetParameterPolicy<RegexInlineRouteConstraint>("regex"));
-
-// Добавляем сервисы Swagger
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Version = "v1",
-        Title = "Todos API",
-        Description = "A simple TODO API with Swagger support",
+        Title = "AI Ecosystem Autotests API",
+        Description = "ASP.NET Core Web API для управления тестами авторизации AI Ecosystem",
+        TermsOfService = new Uri("https://example.com/terms"),
         Contact = new OpenApiContact
         {
             Name = "Development Team",
-            Email = "dev@example.com"
+            Email = "dev@example.com",
+            Url = new Uri("https://example.com/contact")
+        },
+        License = new OpenApiLicense
+        {
+            Name = "MIT License",
+            Url = new Uri("https://opensource.org/licenses/MIT")
         }
     });
 
-    // Включаем XML комментарии (опционально)
-    // var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    // var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    // options.IncludeXmlComments(xmlPath);
+    // Явно указываем серверы для Swagger на правильном порту
+    options.AddServer(new OpenApiServer { Url = "https://localhost:60363" });
+    options.AddServer(new OpenApiServer { Url = "http://localhost:5214" });
+
+    // Добавляем комментарии XML для Swagger
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
+
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+});
+
+// Правильная настройка CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
 });
 
 var app = builder.Build();
 
-// Добавляем middleware Swagger (можно включать не только в Development)
-app.UseSwagger();
-app.UseSwaggerUI(options =>
-{
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Todos API v1");
-    options.RoutePrefix = "swagger";
-    options.DocumentTitle = "Todos API Documentation";
-});
-
-// Добавляем обработку ошибок (рекомендуется)
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "AI Ecosystem Autotests API v1");
+        options.RoutePrefix = "swagger";
+        options.DocumentTitle = "AI Ecosystem Autotests API Documentation";
+    });
 }
-else
-{
-    app.UseExceptionHandler("/error");
-}
 
-// Добавляем статические файлы (если нужно)
-// app.UseStaticFiles();
+app.UseHttpsRedirection();
 
-// Добавляем маршрутизацию
-app.UseRouting();
+// Включаем CORS ДО UseAuthorization и MapControllers
+app.UseCors("AllowAll");
 
-var sampleTodos = new Todo[] {
-    new(1, "Walk the dog"),
-    new(2, "Do the dishes", DateOnly.FromDateTime(DateTime.Now)),
-    new(3, "Do the laundry", DateOnly.FromDateTime(DateTime.Now.AddDays(1))),
-    new(4, "Clean the bathroom"),
-    new(5, "Clean the car", DateOnly.FromDateTime(DateTime.Now.AddDays(2)))
-};
+app.UseAuthorization();
 
-var todosApi = app.MapGroup("/todos");
-todosApi.MapGet("/", () => sampleTodos);
-todosApi.MapGet("/{id}", (int id) =>
-    sampleTodos.FirstOrDefault(a => a.Id == id) is { } todo
-        ? Results.Ok(todo)
-        : Results.NotFound());
-
-// Добавляем endpoint для ошибок
-app.MapGet("/error", () => Results.Problem("An error occurred."));
-
-// Добавляем health check endpoint
-app.MapGet("/health", () => Results.Ok("Healthy"));
+app.MapControllers();
 
 app.Run();
-
-public record Todo(int Id, string? Title, DateOnly? DueBy = null, bool IsComplete = false);
-
-[JsonSerializable(typeof(Todo[]))]
-[JsonSerializable(typeof(Todo))]
-[JsonSerializable(typeof(ProblemDetails))]
-internal partial class AppJsonSerializerContext : JsonSerializerContext
-{
-}

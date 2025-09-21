@@ -1,11 +1,6 @@
-@TestAutotestesEcosystemSwagger_HostAddress = http://localhost:5117
+@SwaggerApiProject_HostAddress = http://localhost:5214
 
-GET {{TestAutotestesEcosystemSwagger_HostAddress}}/todos/
-Accept: application/json
-
-###
-
-GET {{TestAutotestesEcosystemSwagger_HostAddress}}/todos/1
+GET {{SwaggerApiProject_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###

@@ -13,12 +13,12 @@ namespace Autotests.Tests
     [Category("Smoke")]
     [Category("CriticalPath")]
     public class BaseAuthenticationFlowSessionValidation : AuthorizationBase
-    {
+    { 
         [Test]
         [Order(1)]
         [Description("Verify successful user authentication using valid credentials from base configuration")]
-        public void VerifySuccessfulAuthenticationWithValidCredentials()
-        {
+        public void VerifySuccessfulAuthenticationWithValidCredentials() // Eco-R-01-01
+        {   
             HandleCommonExceptions(() =>
             {
                 CurrentTestReport.AddStep($"Инициализация процесса аутентификации", "INFO");
@@ -56,7 +56,7 @@ namespace Autotests.Tests
         [Test]
         [Order(2)]
         [Description("Validate base authentication method successfully processes valid login credentials")]
-        public void ValidateBaseAuthenticationMethodSuccess()
+        public void ValidateBaseAuthenticationMethodSuccess() // Eco-R-01-02
         {
             HandleCommonExceptions(() =>
             {
@@ -76,7 +76,7 @@ namespace Autotests.Tests
         [Test]
         [Order(3)]
         [Description("Verify complete user logout sequence redirects to authentication page")]
-        public void VerifyUserLogoutSequenceCompletesSuccessfully()
+        public void VerifyUserLogoutSequenceCompletesSuccessfully() // Eco-R-01-03
         {
             HandleCommonExceptions(() =>
             {
@@ -145,7 +145,7 @@ namespace Autotests.Tests
         [Test]
         [Order(4)]
         [Description("Verify complete logout and subsequent re-authentication sequence maintains session integrity")]
-        public void VerifyCompleteLogoutAndReauthenticationSequence()
+        public void VerifyCompleteLogoutAndReauthenticationSequence() // Eco-R-01-04
         {
             HandleCommonExceptions(() =>
             {

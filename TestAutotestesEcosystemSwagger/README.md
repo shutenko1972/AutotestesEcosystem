@@ -3,7 +3,7 @@
 Инструкция:
 
 1. Запуск приложения
-uvicorn main:app --reload --host 0.0.0.0 --port 800008121972
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 2. Доступ к Swagger UI
 Swagger UI: http://localhost:8000/docs

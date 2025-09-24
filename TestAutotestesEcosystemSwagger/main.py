@@ -11,26 +11,17 @@ logger = logging.getLogger(__name__)
 
 # Создание приложения с кастомной конфигурацией
 app = FastAPI(
-    title="🔐 Auth Service API",
-    description="<strong>API для аутентификации и управления сессиями пользователей</strong><br><br>"
-                "<div style='background-color: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #3498db;'>"
+    title="🔐 Service API",
+    description="<h3><strong>API для аутентификации и проверки функций</strong></h3><br><br>"
+                "<div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px; border-left: 4px solid #3498db;'>"
                 "<h3 style='color: #2c3e50; margin-top: 0;'>Функциональность:</h3>"
                 "<ul style='color: #7f8c8d;'>"
                 "<li>Аутентификация пользователей</li>"
-                "<li>Управление сессиями</li>"
-                "<li>Проверка валидности токенов</li>"
                 "<li>Безопасный выход из системы</li>"
+                "<li>Проверка работаспособности функций</li>"
                 "</ul>"
                 "</div>",
-    version="1.0.0",
-    contact={
-        "name": "Техническая поддержка",
-        "email": "support@company.com"
-    },
-    license_info={
-        "name": "Лицензия компании",
-        "url": "https://company.com/license"
-    }
+    version="1.0.0"
 )
 
 # Хранилище сессий (в памяти)
@@ -203,14 +194,14 @@ async def check_session(session_token: str = Form(..., description="Токен �
 @app.get("/", include_in_schema=False)
 async def root():
     return {
-        "message": "Auth Service API",
-        "version": "1.0.0",
-        "docs": "/docs",
-        "endpoints": {
+       "message": "Service API",
+       "version": "1.0.0",
+       "docs": "/docs",
+       "endpoints": {
             "login": "/api/auth/login",
             "logout": "/api/auth/logout", 
             "check_session": "/api/auth/check-session"
-        }
+       }
     }
 
 # Запуск приложения

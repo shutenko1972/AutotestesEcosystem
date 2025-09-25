@@ -1,6 +1,6 @@
 ﻿<!-- Начало
 
-# Test. AutotestesEcosystem
+# Test. AutotestesEcosystem.
 
 Структура тестов:
 

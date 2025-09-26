@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36518.9 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test. AutotestesEcosystem", "Test. AutotestesEcosystem.csproj", "{51D363B8-3799-DE1E-E0FA-FED629C3BCF4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestAutotestesEcosystem", "TestAutotestesEcosystem.csproj", "{EE2EA344-9BD4-57EC-9665-92B96D080DCB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{51D363B8-3799-DE1E-E0FA-FED629C3BCF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{51D363B8-3799-DE1E-E0FA-FED629C3BCF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{51D363B8-3799-DE1E-E0FA-FED629C3BCF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{51D363B8-3799-DE1E-E0FA-FED629C3BCF4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE2EA344-9BD4-57EC-9665-92B96D080DCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE2EA344-9BD4-57EC-9665-92B96D080DCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE2EA344-9BD4-57EC-9665-92B96D080DCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE2EA344-9BD4-57EC-9665-92B96D080DCB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {AD4DB52D-5C37-44A9-9179-987280F3EAC9}
+		SolutionGuid = {ACB36895-C46A-4DA7-A778-2365533DF8D0}
 	EndGlobalSection
 EndGlobal

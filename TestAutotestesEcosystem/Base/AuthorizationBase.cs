@@ -19,8 +19,24 @@ namespace Autotests.Base
         // Для ВКЛЮЧЕНИЯ визуализации (браузер видимый):
         protected override string HeadlessOption => "off";
 
-        // Для ОТКЛЮЧЕНИЯ визуализации (headless режим):
-        // protected override string HeadlessOption => "on";
+        protected void HandleCommonExceptions(Action testAction, string testName)
+        {
+            try
+            {
+                CurrentTestReport.AddStep($"Начало выполнения теста: {testName}", "ИНФО");
+                testAction();
+                CurrentTestReport.AddSuccess($"ТЕСТ ПРОЙДЕН: {testName}");
+
+                Thread.Sleep(500);
+            }
+            catch (Exception ex)
+            {
+                CurrentTestReport.AddError($"ТЕСТ НЕ ПРОЙДЕН: {testName} - {ex.Message}", ex);
+                CurrentTestReport.AddStep($"Текущий URL: {Driver.Url}", "ИНФО");
+                TakeScreenshot(testName + "_error");
+                throw;
+            }
+        }
 
         protected void PerformLogin(string? loginUrl = null)
         {
@@ -83,7 +99,7 @@ namespace Autotests.Base
                 CurrentTestReport.AddSuccess("Меню пользователя найдено");
 
                 CurrentTestReport.AddStep("Открытие меню пользователя...", "ИНФО");
-                userMenu.Click();
+                userMenu!.Click();
                 CurrentTestReport.AddSuccess("Меню пользователя открыто");
 
                 Thread.Sleep(1000);
@@ -112,10 +128,10 @@ namespace Autotests.Base
                 }
 
                 Assert.That(accountSettingsButton, Is.Not.Null, "Кнопка 'Account Settings' не найдена в меню");
-                Assert.That(accountSettingsButton.Enabled, Is.True, "Кнопка 'Account Settings' не активна");
+                Assert.That(accountSettingsButton!.Enabled, Is.True, "Кнопка 'Account Settings' не активна");
 
                 CurrentTestReport.AddSuccess("Кнопка 'Account Settings' найдена и активна");
-                return accountSettingsButton;
+                return accountSettingsButton!;
             }
             catch (Exception ex)
             {
@@ -162,34 +178,44 @@ namespace Autotests.Base
                 {
                     try
                     {
-                        var responseElements = Driver.FindElements(By.CssSelector(
-                            ".content, .response, .answer, .message, .coping, " +
-                            "[class*='response'], [class*='answer'], [class*='message']"
-                        ));
+                        // Ищем любой контент в области ответа, кроме заглушки
+                        var responseDiv = Driver.FindElement(By.Id("response_div"));
+                        var responseElements = responseDiv.FindElements(By.CssSelector("*"));
 
-                        var responseElement = responseElements
-                            .FirstOrDefault(e => e.Displayed &&
-                                !string.IsNullOrWhiteSpace(e.Text) &&
-                                e.Text.Length > 10 &&
-                                !e.Text.Contains("Temperature:"));
+                        var meaningfulContent = responseElements
+                            .Where(e => e.Displayed &&
+                                      !string.IsNullOrWhiteSpace(e.Text) &&
+                                      e.Text.Length > 10 &&
+                                      !e.Text.Contains("Your answer will be shown here") &&
+                                      !e.Text.Contains("Temperature:") &&
+                                      !e.Text.Contains("Copy Answer"))
+                            .ToList();
 
-                        if (responseElement != null)
+                        if (meaningfulContent.Any())
                         {
                             responseReceived = true;
-                            CurrentTestReport.AddSuccess($"Ответ получен: {responseElement.Text.Trim()[..Math.Min(50, responseElement.Text.Length)]}...");
+                            var firstContent = meaningfulContent.First();
+                            CurrentTestReport.AddSuccess($"Ответ получен: {firstContent.Text.Trim()[..Math.Min(50, firstContent.Text.Length)]}...");
                             break;
                         }
 
-                        var loadingElements = Driver.FindElements(By.CssSelector(
-                            ".ladda-spinner, .loading, .spinner, [class*='loading']"
+                        // Проверяем, исчезли ли индикаторы загрузки
+                        var loadingIndicators = Driver.FindElements(By.CssSelector(
+                            ".ladda-spinner, .loading, .spinner, [class*='loading'], .btn-ladda-spinner"
                         ));
 
-                        bool isLoading = loadingElements.Any(e => e.Displayed);
+                        bool isLoading = loadingIndicators.Any(e => e.Displayed && e.GetAttribute("style")?.Contains("display: none") == false);
+
                         if (!isLoading)
                         {
-                            responseReceived = true;
-                            CurrentTestReport.AddSuccess("Индикаторы загрузки исчезли, ответ предположительно получен");
-                            break;
+                            // Проверяем, есть ли хотя бы кнопка копирования (признак полученного ответа)
+                            var copyButton = Driver.FindElements(By.CssSelector(".coping"));
+                            if (copyButton.Any(e => e.Displayed))
+                            {
+                                responseReceived = true;
+                                CurrentTestReport.AddSuccess("Индикаторы загрузки исчезли, ответ предположительно получен");
+                                break;
+                            }
                         }
 
                         Thread.Sleep(2000);
@@ -214,22 +240,40 @@ namespace Autotests.Base
             }
         }
 
-        protected void HandleCommonExceptions(Action testAction, string testName)
+        protected void WaitForButtonToBecomeEnabled(IWebElement button, int timeoutSeconds = 30)
+        {
+            CurrentTestReport.AddStep($"Ожидание активации кнопки (таймаут: {timeoutSeconds} секунд)...", "ИНФО");
+
+            DateTime startTime = DateTime.Now;
+            while ((DateTime.Now - startTime).TotalSeconds < timeoutSeconds)
+            {
+                if (button.Enabled)
+                {
+                    CurrentTestReport.AddSuccess("Кнопка снова активна");
+                    return;
+                }
+                Thread.Sleep(1000);
+            }
+
+            throw new Exception($"Кнопка не стала активной в течение {timeoutSeconds} секунд");
+        }
+
+        protected void InteractWithSlider(string sliderClass)
         {
             try
             {
-                CurrentTestReport.AddStep($"Начало выполнения теста: {testName}", "ИНФО");
-                testAction();
-                CurrentTestReport.AddSuccess($"ТЕСТ ПРОЙДЕН: {testName}");
+                var slider = Driver.FindElement(By.CssSelector($".{sliderClass}"));
+                var handle = slider.FindElement(By.CssSelector(".noUi-handle"));
 
+                // Просто кликаем на слайдер, чтобы активировать его
+                handle.Click();
                 Thread.Sleep(500);
+
+                CurrentTestReport.AddSuccess($"Слайдер {sliderClass} активирован");
             }
             catch (Exception ex)
             {
-                CurrentTestReport.AddError($"ТЕСТ НЕ ПРОЙДЕН: {testName} - {ex.Message}", ex);
-                CurrentTestReport.AddStep($"Текущий URL: {Driver.Url}", "ИНФО");
-                TakeScreenshot(testName + "_error");
-                throw;
+                CurrentTestReport.AddWarning($"Не удалось взаимодействовать со слайдером {sliderClass}: {ex.Message}");
             }
         }
     }

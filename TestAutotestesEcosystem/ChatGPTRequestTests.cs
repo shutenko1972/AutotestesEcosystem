@@ -4,7 +4,7 @@ using OpenQA.Selenium;
 using System;
 using System.Threading;
 
-namespace Autotests.Tests
+namespace Autotests
 {
     [TestFixture]
     public class ChatGPTRequestTests : AuthorizationBase

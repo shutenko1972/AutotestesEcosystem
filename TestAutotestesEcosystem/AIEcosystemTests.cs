@@ -4,7 +4,7 @@ using OpenQA.Selenium;
 using System;
 using System.Linq;
 
-namespace Autotests.Tests
+namespace Autotests
 {
     [TestFixture]
     public class AIEcosystemTests : AuthorizationBase

@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
@@ -16,6 +16,11 @@ namespace Autotests
         private readonly DateTime _startTime;
         private DateTime _endTime;
 
+        // Статическое поле для хранения всех ошибок из всех тестов
+        private static readonly List<string> _allErrors = [];
+        private static readonly object _lockObject = new object();
+        private static string? _errorsFilePath; // Добавляем nullable
+
         public TestReport(string testName)
         {
             _testName = testName ?? "НеизвестныйТест";
@@ -24,6 +29,8 @@ namespace Autotests
             _reportDirectory = GetReportsDirectory();
 
             EnsureReportDirectoryExists();
+            // Инициализация файла ошибок один раз
+            InitializeErrorsFile();
             InitializeReport();
         }
 
@@ -74,6 +81,24 @@ namespace Autotests
             AddStep($"Директория отчетов: {_reportDirectory}", "ИНФО");
         }
 
+        private void InitializeErrorsFile()
+        {
+            lock (_lockObject)
+            {
+                if (_errorsFilePath == null)
+                {
+                    _errorsFilePath = Path.Combine(_reportDirectory, "AllErrors.txt");
+
+                    // Создаем заголовок файла ошибок при первом использовании
+                    if (!File.Exists(_errorsFilePath))
+                    {
+                        var header = $"ФАЙЛ ОШИБОК ТЕСТОВ\nСоздан: {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n{new string('=', 80)}\n\n";
+                        File.WriteAllText(_errorsFilePath, header, Encoding.UTF8);
+                    }
+                }
+            }
+        }
+
         public void AddStep(string stepDescription, string status = "ИНФО")
         {
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
@@ -106,6 +131,32 @@ namespace Autotests
             }
 
             AddStep(errorMessage, "ОШИБКА");
+
+            // Добавляем ошибку в общий файл
+            AddErrorToGlobalFile(errorMessage);
+        }
+
+        private void AddErrorToGlobalFile(string errorMessage)
+        {
+            try
+            {
+                lock (_lockObject)
+                {
+                    if (_errorsFilePath == null) return;
+
+                    var errorEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] ТЕСТ: {_testName}\n{errorMessage}\n{new string('-', 60)}\n";
+
+                    // Добавляем ошибку в список
+                    _allErrors.Add(errorEntry);
+
+                    // Записываем в файл
+                    File.AppendAllText(_errorsFilePath, errorEntry, Encoding.UTF8);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Не удалось записать ошибку в общий файл: {ex.Message}");
+            }
         }
 
         public void AddScreenshotInfo(string screenshotPath)
@@ -174,6 +225,13 @@ namespace Autotests
                 statistics.AppendLine($"РЕЗУЛЬТАТ: {status}");
                 statistics.AppendLine("-".PadRight(100, '-'));
 
+                // Добавляем ссылку на файл ошибок, если тест провален
+                if (!_testPassed && _errorsFilePath != null)
+                {
+                    statistics.AppendLine($"Ошибка также записана в общий файл: {Path.GetFileName(_errorsFilePath)}");
+                    statistics.AppendLine("-".PadRight(100, '-'));
+                }
+
                 var fullReport = reportHeader + _reportContent.ToString() + statistics;
 
                 File.WriteAllText(filePath, fullReport, Encoding.UTF8);
@@ -201,10 +259,10 @@ namespace Autotests
             {
                 var tempDirectory = Path.Combine(Path.GetTempPath(), "TestReports");
                 Directory.CreateDirectory(tempDirectory);
-                
+
                 var tempFilePath = Path.Combine(tempDirectory, $"{_testName}_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
                 File.WriteAllText(tempFilePath, _reportContent.ToString(), Encoding.UTF8);
-                
+
                 Console.WriteLine($"✓ Отчет сохранен во временную директорию: {tempFilePath}");
             }
             catch (Exception ex)
@@ -296,7 +354,7 @@ namespace Autotests
 
                 // Заменяем переносы строк на HTML теги
                 message = message.Replace("\n", "<br/>");
-                
+
                 htmlSteps.AppendLine(message);
                 htmlSteps.AppendLine("</div>");
             }
@@ -317,6 +375,29 @@ namespace Autotests
         public int GetStepCount()
         {
             return _steps.Count;
+        }
+
+        // Новый статический метод для получения статистики ошибок
+        public static string GetErrorsSummary()
+        {
+            lock (_lockObject)
+            {
+                return $"Всего ошибок в сессии: {_allErrors.Count}";
+            }
+        }
+
+        // Метод для очистки файла ошибок (опционально)
+        public static void ClearErrorsFile()
+        {
+            lock (_lockObject)
+            {
+                _allErrors.Clear();
+                if (_errorsFilePath != null && File.Exists(_errorsFilePath))
+                {
+                    var header = $"ФАЙЛ ОШИБОК ТЕСТОВ\nОчищен и пересоздан: {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n{new string('=', 80)}\n\n";
+                    File.WriteAllText(_errorsFilePath, header, Encoding.UTF8);
+                }
+            }
         }
     }
 }

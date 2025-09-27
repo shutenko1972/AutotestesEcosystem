@@ -16,9 +16,14 @@ app = FastAPI(
                 "<div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px; border-left: 4px solid #3498db;'>"
                 "<h3 style='color: #2c3e50; margin-top: 0;'>Функциональность:</h3>"
                 "<ul style='color: #7f8c8d;'>"
-                "<li>Аутентификация пользователей</li>"
-                "<li>Безопасный выход из системы</li>"
-                "<li>Проверка работаспособности функций</li>"
+                "<li>Аутентификация (Auth)</li>"
+                "<li>Вход пользователя в систему </li>"
+                "<li>Выход пользователя из системы</li>"
+                "<li>Проверка валидности сессии</li>"
+                  "<li>Проверка работаспособности функций</li>"
+                   "<li>Проверка работаспособности функций</li>"
+                    "<li>Проверка работаспособности функций</li>"
+                     "<li>Проверка работаспособности функций</li>"
                 "</ul>"
                 "</div>",
     version="1.0.0"
@@ -28,10 +33,6 @@ app = FastAPI(
 active_sessions: Dict[str, dict] = {}
 
 # Модели данных
-class LoginRequest(BaseModel):
-    login: str
-    password: str
-
 class LoginResponse(BaseModel):
     message: str
     redirectUrl: str
@@ -48,161 +49,174 @@ class SessionInfoResponse(BaseModel):
     user_login: str
     expires_at: datetime
 
+class ChatResponse(BaseModel):
+    answer: str
+
+class TemperatureResponse(BaseModel):
+    value: int
+
+class TopPResponse(BaseModel):
+    value: int
+
+class ClearResponse(BaseModel):
+    message: str
+
+class CopyResponse(BaseModel):
+    message: str
+
+class HealthResponse(BaseModel):
+    status: str
+
 # Функция для проверки сессии
 def get_session(token: str = Form(...)):
-    """Проверяет валидность сессии"""
     if token not in active_sessions:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Сессия недействительна или истекла"
+            detail="Invalid session"
         )
     return active_sessions[token]
 
-# ВСЕ три эндпоинта в одной группе: Authentication
+# Аутентификация
 @app.post(
     "/api/auth/login",
     response_model=LoginResponse,
-    responses={
-        400: {"model": ErrorResponse, "description": "Неверные параметры запроса"},
-        401: {"model": ErrorResponse, "description": "Неверные учетные данные"},
-        500: {"model": ErrorResponse, "description": "Внутренняя ошибка сервера"}
-    },
-    summary="Аутентификация пользователя",
-    description="Проверяет логин и пароль пользователя и создает сессию длительностью 1 час",
-    tags=["Authentication"]
+    tags=["Auth"]
 )
 async def login(
-    login: str = Form(..., description="Логин пользователя", example="v_shutenko"),
-    password: str = Form(..., description="Пароль пользователя", example="8nEThznM")
+    login: str = Form(...),
+    password: str = Form(...)
 ):
-    try:
-        logger.info(f"Login attempt for user: {login}")
-
-        # Валидация
-        if not login or not password:
-            logger.warning("Validation failed: Login and password are required")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Логин и пароль обязательны"
-            )
-
-        # Проверка учетных данных
-        if login != "v_shutenko" or password != "8nEThznM":
-            logger.warning(f"Invalid credentials for user: {login}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Неверные учетные данные"
-            )
-
-        # Создание сессии
-        session_token = str(uuid.uuid4())
-        active_sessions[session_token] = {
-            "user_login": login,
-            "created_at": datetime.now(),
-            "expires_at": datetime.now() + timedelta(hours=1)
-        }
-
-        logger.info(f"User {login} authenticated successfully. Session created.")
-
-        return LoginResponse(
-            message="Успешная аутентификация",
-            redirectUrl="https://ai-ecosystem-test.janusww.com:9999/request/model.html",
-            sessionToken=session_token
-        )
-
-    except HTTPException:
-        raise
-    except Exception as ex:
-        logger.error(f"Error during login for user: {login} - {ex}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Внутренняя ошибка сервера"
-        )
+    if login != "v_shutenko" or password != "8nEThznM":
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    session_token = str(uuid.uuid4())
+    active_sessions[session_token] = {
+        "user_login": login,
+        "expires_at": datetime.now() + timedelta(hours=1)
+    }
+    
+    return LoginResponse(
+        message="Success",
+        redirectUrl="/request/model.html",
+        sessionToken=session_token
+    )
 
 @app.post(
     "/api/auth/logout",
     response_model=LogoutResponse,
-    responses={
-        401: {"model": ErrorResponse, "description": "Недействительная сессия"},
-        500: {"model": ErrorResponse, "description": "Ошибка при выходе из системы"}
-    },
-    summary="Выход пользователя из системы",
-    description="Завершает сессию пользователя и удаляет токен из активных сессий",
-    tags=["Authentication"]
+    tags=["Auth"]
 )
-async def logout(session_token: str = Form(..., description="Токен сессии для выхода", example="uuid-токен")):
-    try:
-        # Проверяем существование сессии
-        if session_token not in active_sessions:
-            logger.warning("Logout attempt with invalid session token")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Сессия недействительна"
-            )
-
-        # Удаляем сессию
-        user_login = active_sessions[session_token]["user_login"]
+async def logout(session_token: str = Form(...)):
+    if session_token in active_sessions:
         del active_sessions[session_token]
-        
-        logger.info(f"User {user_login} logged out successfully")
-        return LogoutResponse(message="Успешный выход из системы")
-        
-    except HTTPException:
-        raise
-    except Exception as ex:
-        logger.error(f"Error during logout - {ex}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Ошибка при выходе из системы"
-        )
+    return LogoutResponse(message="Logged out")
 
 @app.post(
     "/api/auth/check-session",
     response_model=SessionInfoResponse,
-    responses={
-        401: {"model": ErrorResponse, "description": "Недействительная сессия"},
-        500: {"model": ErrorResponse, "description": "Ошибка при проверке сессии"}
-    },
-    summary="Проверка сессии",
-    description="Проверяет валидность сессии пользователя и возвращает информацию о ней",
-    tags=["Authentication"]
+    tags=["Auth"]
 )
-async def check_session(session_token: str = Form(..., description="Токен сессии для проверки", example="uuid-токен")):
-    try:
-        if session_token not in active_sessions:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Сессия недействительна"
-            )
-        
-        session = active_sessions[session_token]
-        return SessionInfoResponse(
-            valid=True,
-            user_login=session["user_login"],
-            expires_at=session["expires_at"]
-        )
-    except HTTPException:
-        raise
-    except Exception as ex:
-        logger.error(f"Error during session check - {ex}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Ошибка при проверке сессии"
-        )
+async def check_session(session_token: str = Form(...)):
+    session = get_session(session_token)
+    return SessionInfoResponse(
+        valid=True,
+        user_login=session["user_login"],
+        expires_at=session["expires_at"]
+    )
 
-# Дополнительный эндпоинт для получения информации о сервере
-@app.get("/", include_in_schema=False)
-async def root():
+# Функции чата
+@app.post(
+    "/api/chat/send",
+    response_model=ChatResponse,
+    tags=["Chat"]
+)
+async def chat_send(
+    message: str = Form(...),
+    session_token: str = Form(...)
+):
+    get_session(session_token)
+    
+    # Простой ответ
+    if "привет" in message.lower():
+        response = "Привет! Чем могу помочь?"
+    elif "погода" in message.lower():
+        response = "Погода хорошая"
+    elif "время" in message.lower():
+        response = f"Сейчас {datetime.now().strftime('%H:%M')}"
+    else:
+        response = "Получил ваш запрос"
+    
+    return ChatResponse(answer=response)
+
+@app.post(
+    "/api/chat/clear",
+    response_model=ClearResponse,
+    tags=["Chat"]
+)
+async def chat_clear(session_token: str = Form(...)):
+    get_session(session_token)
+    return ClearResponse(message="Chat cleared")
+
+@app.post(
+    "/api/chat/copy",
+    response_model=CopyResponse,
+    tags=["Chat"]
+)
+async def chat_copy(
+    text: str = Form(...),
+    session_token: str = Form(...)
+):
+    get_session(session_token)
+    return CopyResponse(message="Text copied")
+
+# Настройки модели
+@app.post(
+    "/api/settings/temperature",
+    response_model=TemperatureResponse,
+    tags=["Settings"]
+)
+async def set_temperature(
+    value: int = Form(..., ge=0, le=200),
+    session_token: str = Form(...)
+):
+    get_session(session_token)
+    return TemperatureResponse(value=value)
+
+@app.post(
+    "/api/settings/topp",
+    response_model=TopPResponse,
+    tags=["Settings"]
+)
+async def set_topp(
+    value: int = Form(..., ge=0, le=100),
+    session_token: str = Form(...)
+):
+    get_session(session_token)
+    return TopPResponse(value=value)
+
+# Системные функции
+@app.get(
+    "/api/health",
+    response_model=HealthResponse,
+    tags=["System"]
+)
+async def health_check():
+    return HealthResponse(status="OK")
+
+@app.get(
+    "/api/info",
+    tags=["System"]
+)
+async def server_info():
     return {
-       "message": "Service API",
-       "version": "1.0.0",
-       "docs": "/docs",
-       "endpoints": {
-            "login": "/api/auth/login",
-            "logout": "/api/auth/logout", 
-            "check_session": "/api/auth/check-session"
-       }
+        "name": "AI Service",
+        "version": "1.0.0"
     }
+
+# Корневой эндпоинт
+@app.get("/")
+async def root():
+    return {"message": "Service API"}
 
 # Запуск приложения
 if __name__ == "__main__":

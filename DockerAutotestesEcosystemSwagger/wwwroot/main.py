@@ -208,13 +208,3 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-    # Добавьте это в конец файла main.py
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        app, 
-        host="0.0.0.0",  # Важно для Docker!
-        port=8000,
-        reload=True  # Для разработки
-    )
